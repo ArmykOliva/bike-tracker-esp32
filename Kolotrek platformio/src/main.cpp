@@ -5,9 +5,11 @@
 #include "Adafruit_FONA.h"
 
 //constants
+const bool DEBUG = false;
+
 #define FONA_RX 26
 #define FONA_TX 25
-#define FONA_RST 27
+#define FONA_RST 23
 const int SIM_CHECK_INTERVAL = 60;
 char message_sms[] = "Hi there, 1."; //buffer to store message
 char TARGET_NUMBER[] = "+420724946949"; //phone number to send message
@@ -55,6 +57,19 @@ void sim_sleep(bool sleep) {
     simSerial.println("AT+CSCLK=0");
   }
   delay(10000);*/
+}
+
+void updateSerial()
+{
+  delay(500);
+  while (Serial.available()) 
+  {
+    simSerial.write(Serial.read());//Forward what Serial received to Software Serial Port
+  }
+  while(simSerial.available()) 
+  {
+    Serial.write(simSerial.read());//Forward what Software Serial received to Serial Port
+  }
 }
 
 void gps_info()
@@ -208,12 +223,28 @@ void setup()
   //sleep sim
   sim_sleep(true);
 
+  //remove all messages
+  for (int i = 0; i < 20; i++) {
+    if (gsm.deleteSMS(i)) {
+        Serial.println(F("OK!"));
+      } else {
+        Serial.print(F("Couldn't delete SMS in slot ")); Serial.println(i);
+        gsm.print(F("AT+CMGD=?\r\n"));
+      }
+  }
+
   Serial.println("done setup");
 }
 
 void loop()
 {
   unsigned int milis_this_loop = millis();
+
+  //debugh
+  if (DEBUG) {
+    updateSerial();
+  }
+
   //receive sms
   read_sms();
 
@@ -237,6 +268,7 @@ void loop()
     }
     new_message = false;
   }
+
 
   //status
   /*if (milis_this_loop % (SIM_CHECK_INTERVAL*1000) == 0) {
