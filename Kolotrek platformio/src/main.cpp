@@ -181,7 +181,7 @@ void setup()
   pinMode(p_BATTERY,INPUT);
   Serial.begin(9600);
   BMI160.begin(BMI160GenClass::I2C_MODE, bmi160_i2c_addr);
-  if (DEBUG) delay(5000);
+  delay(5000);
 
   // Gps
   gpsSerial.begin(GPSBaud);
@@ -192,7 +192,7 @@ void setup()
     Serial.println(F("Couldn't find SIM800L!"));
     while (1);
   }
-  callNumber(TARGET_NUMBER);
+  //callNumber(TARGET_NUMBER);
   //end
   Serial.println("done setup");
 }
