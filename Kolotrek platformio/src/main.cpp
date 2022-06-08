@@ -192,7 +192,7 @@ void setup()
     Serial.println(F("Couldn't find SIM800L!"));
     while (1);
   }
-  callNumber(TARGET_NUMBER);
+
   //end
   Serial.println("done setup");
 }
@@ -256,19 +256,4 @@ void loop()
     }
     delay(1);
   }
-
-  //gyro
-  int gx, gy, gz;         // raw gyro values
-
-  // read raw gyro measurements from device
-  BMI160.readGyro(gx, gy, gz);
-
-  // display tab-separated gyro x/y/z values
-  Serial.print("g:\t");
-  Serial.print(gx);
-  Serial.print("\t");
-  Serial.print(gy);
-  Serial.print("\t");
-  Serial.print(gz);
-  Serial.println();
 }
