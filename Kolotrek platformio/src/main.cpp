@@ -9,7 +9,7 @@
 const bool DEBUG = false;
 
 //bmi160
-const int bmi160_i2c_addr = 0x68;
+
 
 //sim
 #define FONA_RX 26
@@ -180,7 +180,7 @@ void setup()
   //setup
   pinMode(p_BATTERY,INPUT);
   Serial.begin(9600);
-  BMI160.begin(BMI160GenClass::I2C_MODE, bmi160_i2c_addr);
+  //BMI160.begin(BMI160GenClass::I2C_MODE, bmi160_i2c_addr);
   delay(5000);
 
   // Gps
@@ -192,6 +192,7 @@ void setup()
     Serial.println(F("Couldn't find SIM800L!"));
     while (1);
   }
+  
   //end
   Serial.println("done setup");
 }
@@ -199,7 +200,6 @@ void setup()
 void loop()
 {
   unsigned int milis_this_loop = millis();
-
   //receive sms
   if (milis_this_loop % (SMS_CHECK_INTERVAL*1000) == 0) {
     read_latest_sms();
