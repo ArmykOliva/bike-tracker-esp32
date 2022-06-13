@@ -22,7 +22,7 @@ char smsBuffer[250];
 
 //gps
 const int GPS_CHECK_INTERVAL = 10; //in seconds
-int GPSBaud = 9600;
+static const uint32_t GPSBaud = 9600;
 
 //battery
 bool byl_pod_10 = false;
@@ -59,35 +59,25 @@ void updateSerial()
 
 void gps_info()
 {
-  if (gps.location.isValid())
-  {
-    location_available = true;
-    location_loaded_once = true;
+  while (gpsSerial.available() > 0){
+    gps.encode(gpsSerial.read());
+    if (gps.location.isValid()){
+      location_available = true;
+      location_loaded_once = true;
 
-    Serial.print("Latitude: ");
-    Serial.println(gps.location.lat(), 6);
-    location[0] = gps.location.lat();
+      location[0] = gps.location.lat();
+      location[1] = gps.location.lng();
 
-    Serial.print("Longitude: ");
-    Serial.println(gps.location.lng(), 6);
-    location[1] = gps.location.lng();
-
-    Serial.print("Altitude: ");
-    Serial.println(gps.altitude.meters());
-    location[2] = gps.altitude.meters();
-  } else {
-    location_available = false;
-    Serial.println("Location: Not Available");
+      /*
+      Serial.print("Longitude: ");
+      Serial.println(gps.location.lng(), 6);
+      Serial.print("Latitude: ");
+      Serial.println(gps.location.lat(), 6);*/
+    } else {
+      location_available = false;
+      //Serial.println("Location not available.");
+    }
   }
-
-
-  Serial.print("Time: ");
-  if (gps.time.isValid()) {
-    location_time = String(gps.time.hour() + 2) + ":" + String(gps.time.minute()) + ":" + String(gps.time.second());
-    Serial.println(location_time);
-  }
-
-  Serial.println();
 }
 
 void send_status() {
@@ -105,7 +95,8 @@ void send_status() {
     else message += "\nLocation available:\n\n";
     message += "Latitude: " + String(location[0],6);
     message += "\nLongitude: " + String(location[1],6);
-    message += "\nTime: " + location_time;
+    message += "\nMap: https://maps.google.com/?q=" + String(location[0],6) + "," + String(location[1],6);
+    //message += "\nTime: " + location_time;
   } else {
     message += "Location not yet available. Gps didn't get a clear view of sky.";
   }
@@ -246,13 +237,7 @@ void loop()
   }
 
   //get gps
-  if (milis_this_loop % (GPS_CHECK_INTERVAL*1000) == 0) {
-    Serial.println("Gps check");
-    while (gpsSerial.available()) {
-      if (gps.encode(gpsSerial.read())) { 
-        gps_info();
-      }
-    }
-    delay(1);
-  }
+  gps_info();
+
+  
 }
