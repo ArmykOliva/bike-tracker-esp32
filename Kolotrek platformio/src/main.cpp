@@ -9,7 +9,8 @@
 const bool DEBUG = false;
 
 //bmi160
-
+const int bmi160_i2c_addr = 0x6A;
+const int bmi160_interrupt_pin = 2;
 
 //sim
 #define FONA_RX 26
@@ -171,8 +172,10 @@ void setup()
   //setup
   pinMode(p_BATTERY,INPUT);
   Serial.begin(9600);
+  //delay(5000);
+
+  //BMI
   //BMI160.begin(BMI160GenClass::I2C_MODE, bmi160_i2c_addr);
-  delay(5000);
 
   // Gps
   gpsSerial.begin(GPSBaud);
@@ -238,6 +241,4 @@ void loop()
 
   //get gps
   gps_info();
-
-  
 }
