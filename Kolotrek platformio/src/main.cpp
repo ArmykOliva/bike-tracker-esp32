@@ -3,13 +3,16 @@
 #include <TinyGPS++.h>
 #include <Battery18650Stats.h>
 #include "Adafruit_FONA.h"
-#include <BMI160Gen.h>
+#include "DFRobot_BMI160.h"
 
 //constants
 const bool DEBUG = false;
 
 //bmi160
-
+const int GYRO_ZMENA_MIN = 6000;
+DFRobot_BMI160 bmi160;
+const int8_t i2c_addr = 0x69;
+int16_t accelGyro[6] = {0};
 
 //sim
 #define FONA_RX 26
@@ -171,7 +174,6 @@ void setup()
   //setup
   pinMode(p_BATTERY,INPUT);
   Serial.begin(9600);
-  //BMI160.begin(BMI160GenClass::I2C_MODE, bmi160_i2c_addr);
   delay(5000);
 
   // Gps
@@ -183,7 +185,19 @@ void setup()
     Serial.println(F("Couldn't find SIM800L!"));
     while (1);
   }
-  
+
+  //init the hardware bmin160
+  if (bmi160.softReset() != BMI160_OK){
+    Serial.println("reset false");
+    while(1);
+  }
+
+  //set and init the bmi160 i2c address
+  if (bmi160.I2cInit(i2c_addr) != BMI160_OK){
+    Serial.println("init false");
+    while(1);
+  }
+
   //end
   Serial.println("done setup");
 }
@@ -238,6 +252,11 @@ void loop()
 
   //get gps
   gps_info();
+
+  //get bmi
+  if (parking_mode) {
+
+  }
 
   
 }
