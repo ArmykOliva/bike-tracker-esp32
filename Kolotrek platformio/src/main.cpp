@@ -9,10 +9,13 @@
 const bool DEBUG = false;
 
 //bmi160
-const int GYRO_ZMENA_MIN = 6000;
+const bool BMI_ENABLE = true;
+const int GYRO_ZMENA_MIN = 1000;
 DFRobot_BMI160 bmi160;
 const int8_t i2c_addr = 0x69;
+int16_t default_gyro[6] = {0};
 int16_t accelGyro[6] = {0};
+const int PARK_CHECK_INTERVAL = 2;
 
 //sim
 #define FONA_RX 26
@@ -187,15 +190,17 @@ void setup()
   }
 
   //init the hardware bmin160
-  if (bmi160.softReset() != BMI160_OK){
-    Serial.println("reset false");
-    while(1);
-  }
+  if (BMI_ENABLE) {
+    if (bmi160.softReset() != BMI160_OK){
+      Serial.println("reset false");
+      while(1);
+    }
 
-  //set and init the bmi160 i2c address
-  if (bmi160.I2cInit(i2c_addr) != BMI160_OK){
-    Serial.println("init false");
-    while(1);
+    //set and init the bmi160 i2c address
+    if (bmi160.I2cInit(i2c_addr) != BMI160_OK){
+      Serial.println("init false");
+      while(1);
+    }
   }
 
   //end
@@ -219,8 +224,25 @@ void loop()
       Serial.println("sending status");
       send_status();
     } else if (sms_buffer.equals("parking on")) {
-      parking_mode = true;
-      send_sms("Parking on");
+      if (BMI_ENABLE) {
+        int rslt = bmi160.getAccelGyroData(accelGyro);
+        delay(1000);
+        bmi160.getAccelGyroData(default_gyro);
+        int soucet_gyro = abs(accelGyro[0]) + abs(accelGyro[1]) + abs(accelGyro[2]);
+        int default_soucet_gyro = abs(default_gyro[0]) + abs(default_gyro[1]) + abs(default_gyro[2]);
+
+        if (rslt == 0) {
+          while (abs(abs(soucet_gyro) - abs(default_soucet_gyro)) > GYRO_ZMENA_MIN) { //dokud se akcelerometr neuklidni, tak kalibrovat, po kalibraci uz jen checkovat jestli projde pres threshold
+            bmi160.getAccelGyroData(accelGyro);
+            delay(1000);
+            bmi160.getAccelGyroData(default_gyro);
+            Serial.print("kalibrace ");
+            Serial.println(soucet_gyro);
+          }
+          send_sms("Parking on");
+          parking_mode = true;
+        } else send_sms("Error reading bmi160 data");
+      } else send_sms("Bmi160 accelerometer is not connected");
     } else if (sms_buffer.equals("parking off")) {
       parking_mode = false;
       send_sms("Parking off");
@@ -254,8 +276,19 @@ void loop()
   gps_info();
 
   //get bmi
-  if (parking_mode) {
+  if (milis_this_loop % (PARK_CHECK_INTERVAL*1000) == 0 && parking_mode && BMI_ENABLE ) {
+    bmi160.getAccelGyroData(accelGyro);
 
+    int soucet_gyro = abs(accelGyro[0]) + abs(accelGyro[1]) + abs(accelGyro[2]);
+    int default_soucet_gyro = abs(default_gyro[0]) + abs(default_gyro[1]) + abs(default_gyro[2]);
+    Serial.println(abs(abs(soucet_gyro) - abs(default_soucet_gyro)));
+
+    if (abs(abs(soucet_gyro) - abs(default_soucet_gyro)) > GYRO_ZMENA_MIN) { 
+      Serial.println("Someone is stealing the bike!");
+      String call_command = "ATD+ " + String(TARGET_NUMBER) + ";";
+      gsm.println(call_command);
+    }
+    bmi160.getAccelGyroData(default_gyro);
   }
 
   
